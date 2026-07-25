@@ -1,14 +1,11 @@
 using EHRPlatform.Common.CQRS;
 using EHRPlatform.Common.Data;
-using EHRPlatform.Services.Analytics.Features.Analytics.Domain;
+using EHRPlatform.Services.Analytics.Domain.Entities;
 using EHRPlatform.Services.Analytics.Features.Analytics.Dtos.Responses;
 using Mapster;
 
 namespace EHRPlatform.Services.Analytics.Features.Analytics.Queries;
 
-/// <summary>
-/// Get metrics handler.
-/// </summary>
 public class GetMetricsQueryHandler : IQueryHandler<GetMetricsQuery, AnalyticsMetricResponseDto>
 {
     private readonly IUnitOfWork _unitOfWork;
@@ -20,36 +17,25 @@ public class GetMetricsQueryHandler : IQueryHandler<GetMetricsQuery, AnalyticsMe
         _logger = logger;
     }
 
-    public async Task<AnalyticsMetricResponseDto> Handle(GetMetricsQuery request, CancellationToken cancellationToken)
+    public async Task<AnalyticsMetricResponseDto> Handle(GetMetricsQuery request, CancellationToken ct)
     {
         _logger.LogInformation("Fetching metrics for {Category}", request.Category);
-
         var repo = _unitOfWork.Repository<AnalyticsMetric>();
         var metrics = await repo.ToListAsync(
-            q => q.Where(m =>
-                m.Category == request.Category &&
-                m.PeriodStart >= request.PeriodStart &&
-                m.PeriodEnd <= request.PeriodEnd),
-            cancellationToken);
+            q => q.Where(m => m.Category == request.Category
+                && m.PeriodStart >= request.PeriodStart
+                && m.PeriodEnd <= request.PeriodEnd), ct);
 
         return new AnalyticsMetricResponseDto
         {
             Category = request.Category,
             PeriodStart = request.PeriodStart,
             PeriodEnd = request.PeriodEnd,
-            Metrics = metrics.Select(m => new MetricItemDto
-            {
-                Name = m.MetricName,
-                Value = m.Value,
-                Unit = m.Unit
-            }).ToList()
+            Metrics = metrics.Select(m => new MetricItemDto { Name = m.MetricName, Value = m.Value, Unit = m.Unit }).ToList()
         };
     }
 }
 
-/// <summary>
-/// Get KPI summary handler.
-/// </summary>
 public class GetKPISummaryQueryHandler : IQueryHandler<GetKPISummaryQuery, AnalyticsMetricListDto>
 {
     private readonly IUnitOfWork _unitOfWork;
@@ -61,33 +47,25 @@ public class GetKPISummaryQueryHandler : IQueryHandler<GetKPISummaryQuery, Analy
         _logger = logger;
     }
 
-    public async Task<AnalyticsMetricListDto> Handle(GetKPISummaryQuery request, CancellationToken cancellationToken)
+    public async Task<AnalyticsMetricListDto> Handle(GetKPISummaryQuery request, CancellationToken ct)
     {
-        _logger.LogInformation("Calculating KPI summary");
-
         var periodStart = request.PeriodStart ?? DateTime.UtcNow.AddDays(-30);
-        var periodEnd = request.PeriodEnd ?? DateTime.UtcNow;
+        var periodEnd   = request.PeriodEnd   ?? DateTime.UtcNow;
 
         var repo = _unitOfWork.Repository<AnalyticsMetric>();
         var metrics = await repo.ToListAsync(
-            q => q.Where(m => m.PeriodStart >= periodStart && m.PeriodEnd <= periodEnd),
-            cancellationToken);
+            q => q.Where(m => m.PeriodStart >= periodStart && m.PeriodEnd <= periodEnd), ct);
 
-        var summary = new AnalyticsMetricListDto
+        return new AnalyticsMetricListDto
         {
-            PatientVolume = metrics.Where(m => m.MetricName.Contains("patient")).Sum(m => m.Value),
-            AppointmentUtilization = metrics.Where(m => m.MetricName.Contains("appointment")).Sum(m => m.Value) / 100m,
-            RevenueTotal = metrics.Where(m => m.Unit == "USD").Sum(m => m.Value),
-            Trends = new List<TrendItemDto>()
+            PatientVolume           = metrics.Where(m => m.MetricName.Contains("patient")).Sum(m => m.Value),
+            AppointmentUtilization  = metrics.Where(m => m.MetricName.Contains("appointment")).Sum(m => m.Value) / 100m,
+            RevenueTotal            = metrics.Where(m => m.Unit == "USD").Sum(m => m.Value),
+            Trends                  = new List<TrendItemDto>()
         };
-
-        return summary;
     }
 }
 
-/// <summary>
-/// Get user dashboard handler.
-/// </summary>
 public class GetUserDashboardQueryHandler : IQueryHandler<GetUserDashboardQuery, DashboardResponseDto>
 {
     private readonly IUnitOfWork _unitOfWork;
@@ -99,35 +77,24 @@ public class GetUserDashboardQueryHandler : IQueryHandler<GetUserDashboardQuery,
         _logger = logger;
     }
 
-    public async Task<DashboardResponseDto> Handle(GetUserDashboardQuery request, CancellationToken cancellationToken)
+    public async Task<DashboardResponseDto> Handle(GetUserDashboardQuery request, CancellationToken ct)
     {
-        _logger.LogInformation("Fetching dashboard {DashboardId} for user {UserId}",
-            request.DashboardId, request.UserId);
-
         var repo = _unitOfWork.Repository<Dashboard>();
         var dashboard = await repo.FirstOrDefaultAsync(
-            q => q.Where(d => d.Id == request.DashboardId && d.UserId == request.UserId),
-            cancellationToken);
+            q => q.Where(d => d.Id == request.DashboardId && d.UserId == request.UserId), ct)
+            ?? throw new InvalidOperationException($"Dashboard {request.DashboardId} not found");
 
-        if (dashboard == null)
-            throw new InvalidOperationException($"Dashboard {request.DashboardId} not found");
-
-        var dto = dashboard.Adapt<DashboardResponseDto>();
-        dto.Widgets = dashboard.DashboardWidgets.Select(w => new DashboardWidgetDto
+        return new DashboardResponseDto
         {
-            Id = w.Id,
-            WidgetType = w.WidgetType,
-            Title = w.Title,
-            MetricName = w.MetricName
-        }).ToList();
-
-        return dto;
+            Id = dashboard.Id, UserId = dashboard.UserId,
+            Name = dashboard.Name, Description = dashboard.Description,
+            IsDefault = dashboard.IsDefault,
+            Widgets = dashboard.DashboardWidgets.Select(w => new DashboardWidgetDto
+            { Id = w.Id, WidgetType = w.WidgetType, Title = w.Title, MetricName = w.MetricName }).ToList()
+        };
     }
 }
 
-/// <summary>
-/// Get user dashboards handler.
-/// </summary>
 public class GetUserDashboardsQueryHandler : IQueryHandler<GetUserDashboardsQuery, List<DashboardResponseDto>>
 {
     private readonly IUnitOfWork _unitOfWork;
@@ -139,36 +106,20 @@ public class GetUserDashboardsQueryHandler : IQueryHandler<GetUserDashboardsQuer
         _logger = logger;
     }
 
-    public async Task<List<DashboardResponseDto>> Handle(GetUserDashboardsQuery request, CancellationToken cancellationToken)
+    public async Task<List<DashboardResponseDto>> Handle(GetUserDashboardsQuery request, CancellationToken ct)
     {
-        _logger.LogInformation("Fetching dashboards for user {UserId}", request.UserId);
-
         var repo = _unitOfWork.Repository<Dashboard>();
-        var dashboards = await repo.ToListAsync(
-            q => q.Where(d => d.UserId == request.UserId),
-            cancellationToken);
+        var dashboards = await repo.ToListAsync(q => q.Where(d => d.UserId == request.UserId), ct);
 
         return dashboards.Select(d => new DashboardResponseDto
         {
-            Id = d.Id,
-            UserId = d.UserId,
-            Name = d.Name,
-            Description = d.Description,
-            IsDefault = d.IsDefault,
+            Id = d.Id, UserId = d.UserId, Name = d.Name, Description = d.Description, IsDefault = d.IsDefault,
             Widgets = d.DashboardWidgets.Select(w => new DashboardWidgetDto
-            {
-                Id = w.Id,
-                WidgetType = w.WidgetType,
-                Title = w.Title,
-                MetricName = w.MetricName
-            }).ToList()
+            { Id = w.Id, WidgetType = w.WidgetType, Title = w.Title, MetricName = w.MetricName }).ToList()
         }).ToList();
     }
 }
 
-/// <summary>
-/// Get report handler.
-/// </summary>
 public class GetReportQueryHandler : IQueryHandler<GetReportQuery, ReportResponseDto>
 {
     private readonly IUnitOfWork _unitOfWork;
@@ -180,25 +131,15 @@ public class GetReportQueryHandler : IQueryHandler<GetReportQuery, ReportRespons
         _logger = logger;
     }
 
-    public async Task<ReportResponseDto> Handle(GetReportQuery request, CancellationToken cancellationToken)
+    public async Task<ReportResponseDto> Handle(GetReportQuery request, CancellationToken ct)
     {
-        _logger.LogInformation("Fetching report {ReportId}", request.ReportId);
-
         var repo = _unitOfWork.Repository<Report>();
-        var report = await repo.FirstOrDefaultAsync(
-            q => q.Where(r => r.Id == request.ReportId),
-            cancellationToken);
-
-        if (report == null)
-            throw new InvalidOperationException($"Report {request.ReportId} not found");
-
+        var report = await repo.FirstOrDefaultAsync(q => q.Where(r => r.Id == request.ReportId), ct)
+            ?? throw new InvalidOperationException($"Report {request.ReportId} not found");
         return report.Adapt<ReportResponseDto>();
     }
 }
 
-/// <summary>
-/// Get user reports handler.
-/// </summary>
 public class GetUserReportsQueryHandler : IQueryHandler<GetUserReportsQuery, List<ReportResponseDto>>
 {
     private readonly IUnitOfWork _unitOfWork;
@@ -210,15 +151,10 @@ public class GetUserReportsQueryHandler : IQueryHandler<GetUserReportsQuery, Lis
         _logger = logger;
     }
 
-    public async Task<List<ReportResponseDto>> Handle(GetUserReportsQuery request, CancellationToken cancellationToken)
+    public async Task<List<ReportResponseDto>> Handle(GetUserReportsQuery request, CancellationToken ct)
     {
-        _logger.LogInformation("Fetching reports for user {UserId}", request.UserId);
-
         var repo = _unitOfWork.Repository<Report>();
-        var reports = await repo.ToListAsync(
-            q => q.Where(r => r.UserId == request.UserId),
-            cancellationToken);
-
+        var reports = await repo.ToListAsync(q => q.Where(r => r.UserId == request.UserId), ct);
         return reports.Adapt<List<ReportResponseDto>>();
     }
 }

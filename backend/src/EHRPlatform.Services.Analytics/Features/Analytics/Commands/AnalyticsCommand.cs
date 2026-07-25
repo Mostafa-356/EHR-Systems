@@ -1,13 +1,9 @@
 using EHRPlatform.Common.CQRS;
 using EHRPlatform.Services.Analytics.Features.Analytics.Dtos.Responses;
-using FluentValidation;
 
 namespace EHRPlatform.Services.Analytics.Features.Analytics.Commands;
 
-/// <summary>
-/// Record event metric command.
-/// Called by event listeners consuming domain events.
-/// </summary>
+/// <summary>Record event metric command. Called by event listeners consuming domain events.</summary>
 public record RecordEventMetricCommand : ICommand
 {
     public string EventType { get; init; } = string.Empty;
@@ -15,20 +11,15 @@ public record RecordEventMetricCommand : ICommand
     public Dictionary<string, string> Properties { get; init; } = new();
 }
 
-/// <summary>
-/// Aggregate metrics command.
-/// Runs aggregation job for daily/weekly/monthly metrics.
-/// </summary>
+/// <summary>Aggregate metrics command. Runs aggregation job for daily/weekly/monthly metrics.</summary>
 public record AggregateMetricsCommand : ICommand
 {
     public string Frequency { get; init; } = string.Empty; // Daily, Weekly, Monthly
     public DateTime? ForPeriod { get; init; }
 }
 
-/// <summary>
-/// Create dashboard command.
-/// </summary>
-public record CreateDashboardCommand : ICommand<DashboardDetailedDto>
+/// <summary>Create dashboard command.</summary>
+public record CreateDashboardCommand : ICommand<DashboardResponseDto>
 {
     public Guid UserId { get; init; }
     public string Name { get; init; } = string.Empty;
@@ -36,9 +27,7 @@ public record CreateDashboardCommand : ICommand<DashboardDetailedDto>
     public bool IsDefault { get; init; }
 }
 
-/// <summary>
-/// Add widget to dashboard command.
-/// </summary>
+/// <summary>Add widget to dashboard command.</summary>
 public record AddDashboardWidgetCommand : ICommand
 {
     public Guid DashboardId { get; init; }
@@ -47,10 +36,8 @@ public record AddDashboardWidgetCommand : ICommand
     public string MetricName { get; init; } = string.Empty;
 }
 
-/// <summary>
-/// Create report template command.
-/// </summary>
-public record CreateReportCommand : ICommand<ReportDetailedDto>
+/// <summary>Create report template command.</summary>
+public record CreateReportCommand : ICommand<ReportResponseDto>
 {
     public Guid UserId { get; init; }
     public string Name { get; init; } = string.Empty;
@@ -60,10 +47,8 @@ public record CreateReportCommand : ICommand<ReportDetailedDto>
     public string Schedule { get; init; } = "OnDemand";
 }
 
-/// <summary>
-/// Generate report command.
-/// </summary>
-public record GenerateReportCommand : ICommand<ReportExecutionDto>
+/// <summary>Generate report command.</summary>
+public record GenerateReportCommand : ICommand<ReportExecutionResponseDto>
 {
     public Guid ReportId { get; init; }
 }

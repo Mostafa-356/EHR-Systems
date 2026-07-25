@@ -1,26 +1,28 @@
 using EHRPlatform.Common.CQRS;
 using EHRPlatform.Common.Data;
 using EHRPlatform.Common.Messaging;
-using EHRPlatform.Services.Appointment.Features.Appointments.Domain;
+using EHRPlatform.Services.Appointment.Application.AppointmentManagement.Responses;
+using EHRPlatform.Services.Appointment.Features.Appointments.Commands;
+using Appointment = EHRPlatform.Services.Appointment.Features.Appointments.Domain.Appointment;
+using ProviderAvailability = EHRPlatform.Services.Appointment.Features.Appointments.Domain.ProviderAvailability;
 
 namespace EHRPlatform.Services.Appointment.Application.AppointmentBooking.Handlers;
 
 /// <summary>
-/// Schedule appointment handler.
-/// Validates provider availability, publishes event.
+/// Schedule appointment handler. Validates provider availability, publishes event.
 /// Delegates all mapping to AppointmentMapper (SRP).
 /// </summary>
 public class ScheduleAppointmentHandler : ICommandHandler<ScheduleAppointmentCommand, AppointmentResponseDto>
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IOutboxRepository _outbox;
-    private readonly AppointmentMapper _mapper;
+    private readonly AppointmentManagement.Mappers.AppointmentMapper _mapper;
     private readonly ILogger<ScheduleAppointmentHandler> _logger;
 
     public ScheduleAppointmentHandler(
         IUnitOfWork unitOfWork,
         IOutboxRepository outbox,
-        AppointmentMapper mapper,
+        AppointmentManagement.Mappers.AppointmentMapper mapper,
         ILogger<ScheduleAppointmentHandler> logger)
     {
         _unitOfWork = unitOfWork;
@@ -49,7 +51,7 @@ public class ScheduleAppointmentHandler : ICommandHandler<ScheduleAppointmentCom
         if (availSlot == null || !availSlot.HasAvailability())
             throw new InvalidOperationException("Provider slot not available at requested time");
 
-        var appointment = new Domain.Appointment
+        var appointment = new Appointment
         {
             Id = Guid.NewGuid(),
             PatientId = command.PatientId,
@@ -63,30 +65,23 @@ public class ScheduleAppointmentHandler : ICommandHandler<ScheduleAppointmentCom
             DurationMinutes = command.DurationMinutes
         };
 
-        // Add default reminders (24 hours, 2 hours before)
         appointment.AddReminder(command.ScheduledStart.AddHours(-24), "Email");
         appointment.AddReminder(command.ScheduledStart.AddHours(-2), "SMS");
-
-        // Book the availability slot
         availSlot.BookSlot();
 
-        var appointmentRepo = _unitOfWork.Repository<Domain.Appointment>();
+        var appointmentRepo = _unitOfWork.Repository<Appointment>();
         await appointmentRepo.AddAsync(appointment, cancellationToken);
         await availRepo.UpdateAsync(availSlot, cancellationToken);
 
-        // Publish event
-        var scheduledEvent = new AppointmentScheduledEvent(
-            appointment.Id,
-            appointment.PatientId,
-            appointment.ProviderId,
-            appointment.ScheduledStart,
-            appointment.AppointmentType);
+        var scheduledEvent = new Domain.Events.AppointmentScheduledEvent(
+            appointment.Id, appointment.PatientId, appointment.ProviderId,
+            appointment.ScheduledStart, appointment.AppointmentType);
 
         await _outbox.AddAsync(new OutboxEvent
         {
             Id = Guid.NewGuid(),
             AggregateId = appointment.Id,
-            EventType = nameof(AppointmentScheduledEvent),
+            EventType = nameof(Domain.Events.AppointmentScheduledEvent),
             EventData = System.Text.Json.JsonSerializer.Serialize(scheduledEvent),
             CreatedAt = DateTime.UtcNow
         }, cancellationToken);
@@ -94,21 +89,6 @@ public class ScheduleAppointmentHandler : ICommandHandler<ScheduleAppointmentCom
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation("Appointment scheduled {AppointmentId}", appointment.Id);
-
         return _mapper.MapToResponseDto(appointment);
     }
-}
-
-/// <summary>
-/// Schedule appointment command (CQRS).
-/// </summary>
-public record ScheduleAppointmentCommand : ICommand<AppointmentResponseDto>
-{
-    public Guid PatientId { get; init; }
-    public Guid ProviderId { get; init; }
-    public DateTime ScheduledStart { get; init; }
-    public int DurationMinutes { get; init; }
-    public string AppointmentType { get; init; } = string.Empty; // Office, Telehealth, Phone
-    public string? ReasonForVisit { get; init; }
-    public string? Notes { get; init; }
 }

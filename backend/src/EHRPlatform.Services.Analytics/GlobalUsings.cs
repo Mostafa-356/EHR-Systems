@@ -1,3 +1,4 @@
+global using Microsoft.Extensions.Logging;
 global using EHRPlatform.Services.Analytics.Data;
 global using EHRPlatform.Services.Analytics.Data.Configuration;
 global using EHRPlatform.Services.Analytics.Data.Seeds;
@@ -10,5 +11,4 @@ global using EHRPlatform.Services.Analytics.Application.Analytics.Requests;
 global using EHRPlatform.Services.Analytics.Application.Analytics.Responses;
 global using EHRPlatform.Services.Analytics.Features.Analytics.Commands;
 global using EHRPlatform.Services.Analytics.Features.Analytics.Queries;
-global using EHRPlatform.Services.Analytics.Features.Analytics.Handlers;
-global using EHRPlatform.Services.Analytics.Features.Analytics.Validation;
+global using EHRPlatform.Services.Analytics.Features.Analytics.Dtos.Responses;

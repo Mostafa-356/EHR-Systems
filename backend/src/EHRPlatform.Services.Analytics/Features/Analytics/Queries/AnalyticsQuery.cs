@@ -3,9 +3,7 @@ using EHRPlatform.Services.Analytics.Features.Analytics.Dtos.Responses;
 
 namespace EHRPlatform.Services.Analytics.Features.Analytics.Queries;
 
-/// <summary>
-/// Get metrics for period - CACHED query.
-/// </summary>
+/// <summary>Get metrics for period — cached query.</summary>
 public record GetMetricsQuery : ICachedQuery<AnalyticsMetricResponseDto>
 {
     public string Category { get; init; } = string.Empty;
@@ -13,12 +11,10 @@ public record GetMetricsQuery : ICachedQuery<AnalyticsMetricResponseDto>
     public DateTime PeriodEnd { get; init; }
 
     public string CacheKey => $"metrics_{Category}_{PeriodStart:yyyyMMdd}_{PeriodEnd:yyyyMMdd}";
-    public int CacheDurationSeconds => 3600; // 1 hour
+    public int CacheDurationSeconds => 3600;
 }
 
-/// <summary>
-/// Get KPI summary - CACHED query.
-/// </summary>
+/// <summary>Get KPI summary — cached query.</summary>
 public record GetKPISummaryQuery : ICachedQuery<AnalyticsMetricListDto>
 {
     public DateTime? PeriodStart { get; init; }
@@ -28,9 +24,7 @@ public record GetKPISummaryQuery : ICachedQuery<AnalyticsMetricListDto>
     public int CacheDurationSeconds => 3600;
 }
 
-/// <summary>
-/// Get user dashboard - CACHED query.
-/// </summary>
+/// <summary>Get user dashboard — cached query.</summary>
 public record GetUserDashboardQuery : ICachedQuery<DashboardResponseDto>
 {
     public Guid UserId { get; init; }
@@ -40,9 +34,7 @@ public record GetUserDashboardQuery : ICachedQuery<DashboardResponseDto>
     public int CacheDurationSeconds => 600;
 }
 
-/// <summary>
-/// Get user dashboards - CACHED query.
-/// </summary>
+/// <summary>Get user dashboards — cached query.</summary>
 public record GetUserDashboardsQuery : ICachedQuery<List<DashboardResponseDto>>
 {
     public Guid UserId { get; init; }
@@ -51,9 +43,7 @@ public record GetUserDashboardsQuery : ICachedQuery<List<DashboardResponseDto>>
     public int CacheDurationSeconds => 600;
 }
 
-/// <summary>
-/// Get report - CACHED query.
-/// </summary>
+/// <summary>Get report — cached query.</summary>
 public record GetReportQuery : ICachedQuery<ReportResponseDto>
 {
     public Guid ReportId { get; init; }
@@ -62,9 +52,7 @@ public record GetReportQuery : ICachedQuery<ReportResponseDto>
     public int CacheDurationSeconds => 1800;
 }
 
-/// <summary>
-/// Get user reports - CACHED query.
-/// </summary>
+/// <summary>Get user reports — cached query.</summary>
 public record GetUserReportsQuery : ICachedQuery<List<ReportResponseDto>>
 {
     public Guid UserId { get; init; }
