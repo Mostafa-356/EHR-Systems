@@ -22,7 +22,7 @@ try
     builder.Services.AddSwaggerGen();
 
     // ── Database (PostgreSQL) ─────────────────────────────────────────────────
-    var connectionString = BuildConnectionString(builder.Configuration);
+    var connectionString = builder.Configuration.BuildPostgresConnectionString();
     builder.Services.AddPostgresDataAccess<AppointmentContext>(connectionString);
 
     // ── CQRS + Common ─────────────────────────────────────────────────────────
@@ -85,23 +85,3 @@ finally
     Log.CloseAndFlush();
 }
 
-static string BuildConnectionString(IConfiguration config)
-{
-    var explicit_ = config.GetConnectionString("DefaultConnection");
-    if (!string.IsNullOrEmpty(explicit_) && !explicit_.Contains("localhost")) return explicit_;
-
-    var host = Environment.GetEnvironmentVariable("PGHOST");
-    var port = Environment.GetEnvironmentVariable("PGPORT") ?? "5432";
-    var db   = Environment.GetEnvironmentVariable("PGDATABASE");
-    var user = Environment.GetEnvironmentVariable("PGUSER");
-    var pass = Environment.GetEnvironmentVariable("PGPASSWORD");
-
-    if (!string.IsNullOrEmpty(host))
-    {
-        var ssl = host.Contains('.') ? "SSL Mode=Require;Trust Server Certificate=true;" : "SSL Mode=Disable;";
-        return $"Host={host};Port={port};Database={db};Username={user};Password={pass};{ssl}";
-    }
-
-    if (!string.IsNullOrEmpty(explicit_)) return explicit_;
-    throw new InvalidOperationException("Database connection not configured. Set PGHOST or ConnectionStrings__DefaultConnection.");
-}

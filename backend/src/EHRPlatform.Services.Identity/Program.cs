@@ -58,7 +58,7 @@ try
     });
 
     // ── Database (PostgreSQL) ─────────────────────────────────────────────────
-    var connectionString = BuildConnectionString(builder.Configuration);
+    var connectionString = builder.Configuration.BuildPostgresConnectionString();
     builder.Services.AddPostgresDataAccess<IdentityContext>(connectionString);
 
     // ── CQRS: handlers, validators, mappers ──────────────────────────────────
@@ -187,29 +187,3 @@ finally
     Log.CloseAndFlush();
 }
 
-// ── Build Npgsql connection string from Replit PG* env vars ──────────────────
-static string BuildConnectionString(IConfiguration config)
-{
-    var explicit_ = config.GetConnectionString("DefaultConnection");
-    if (!string.IsNullOrEmpty(explicit_)) return explicit_;
-
-    var host = Environment.GetEnvironmentVariable("PGHOST");
-    var port = Environment.GetEnvironmentVariable("PGPORT") ?? "5432";
-    var db   = Environment.GetEnvironmentVariable("PGDATABASE");
-    var user = Environment.GetEnvironmentVariable("PGUSER");
-    var pass = Environment.GetEnvironmentVariable("PGPASSWORD");
-
-    if (!string.IsNullOrEmpty(host))
-    {
-        // Replit's managed PostgreSQL runs locally without SSL.
-        // Only enable SSL when connecting to external/cloud hosts.
-        var needsSsl = host.Contains('.');
-        var sslClause = needsSsl
-            ? "SSL Mode=Require;Trust Server Certificate=true;"
-            : "SSL Mode=Disable;";
-        return $"Host={host};Port={port};Database={db};Username={user};Password={pass};{sslClause}";
-    }
-
-    throw new InvalidOperationException(
-        "Database connection not configured. Set ConnectionStrings__DefaultConnection or PGHOST.");
-}

@@ -1,0 +1,14 @@
+global using EHRPlatform.Services.Analytics.Data;
+global using EHRPlatform.Services.Analytics.Data.Configuration;
+global using EHRPlatform.Services.Analytics.Data.Seeds;
+global using EHRPlatform.Services.Analytics.Domain.Entities;
+global using EHRPlatform.Services.Analytics.Domain.Events;
+global using EHRPlatform.Services.Analytics.Domain.Enums;
+global using EHRPlatform.Services.Analytics.Application.Analytics;
+global using EHRPlatform.Services.Analytics.Application.Analytics.Mappers;
+global using EHRPlatform.Services.Analytics.Application.Analytics.Requests;
+global using EHRPlatform.Services.Analytics.Application.Analytics.Responses;
+global using EHRPlatform.Services.Analytics.Features.Analytics.Commands;
+global using EHRPlatform.Services.Analytics.Features.Analytics.Queries;
+global using EHRPlatform.Services.Analytics.Features.Analytics.Handlers;
+global using EHRPlatform.Services.Analytics.Features.Analytics.Validation;

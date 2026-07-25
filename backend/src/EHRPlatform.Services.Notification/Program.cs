@@ -28,8 +28,6 @@ builder.Services.AddMassTransitHybrid(
     {
         // Bridge: Kafka domain events → SignalR push
         rider.AddConsumer<LabResultConsumer>();
-
-        rider.AddConsumer<LabResultConsumer>();
         // Add more Kafka consumers here as clinical events are added:
         //   rider.AddConsumer<VitalAlertConsumer>();
         //   rider.AddConsumer<AppointmentReminderConsumer>();

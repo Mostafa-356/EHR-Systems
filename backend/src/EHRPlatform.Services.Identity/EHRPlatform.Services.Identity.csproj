@@ -13,10 +13,6 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.0" />
     <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore" Version="8.0.0" />
 
-    <!-- Authentication — align with versions pulled in by EHRPlatform.Common -->
-    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="7.1.2" />
-    <PackageReference Include="Microsoft.IdentityModel.Protocols.OpenIdConnect" Version="7.0.3" />
-
     <!-- CQRS -->
     <PackageReference Include="MediatR" Version="12.1.1" />
     <PackageReference Include="FluentValidation" Version="11.8.0" />

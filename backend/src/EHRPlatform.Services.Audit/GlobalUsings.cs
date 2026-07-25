@@ -1,0 +1,14 @@
+global using EHRPlatform.Services.Audit.Data;
+global using EHRPlatform.Services.Audit.Data.Configuration;
+global using EHRPlatform.Services.Audit.Data.Seeds;
+global using EHRPlatform.Services.Audit.Domain.Entities;
+global using EHRPlatform.Services.Audit.Domain.Events;
+global using EHRPlatform.Services.Audit.Domain.Enums;
+global using EHRPlatform.Services.Audit.Application.Audit;
+global using EHRPlatform.Services.Audit.Application.Audit.Mappers;
+global using EHRPlatform.Services.Audit.Application.Audit.Requests;
+global using EHRPlatform.Services.Audit.Application.Audit.Responses;
+global using EHRPlatform.Services.Audit.Features.Audit.Commands;
+global using EHRPlatform.Services.Audit.Features.Audit.Queries;
+global using EHRPlatform.Services.Audit.Features.Audit.Handlers;
+global using EHRPlatform.Services.Audit.Features.Audit.Validation;

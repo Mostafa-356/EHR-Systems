@@ -20,7 +20,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 // ── Database (PostgreSQL via Replit env vars or explicit connection string) ────
-var connectionString = BuildConnectionString(builder.Configuration);
+var connectionString = builder.Configuration.BuildPostgresConnectionString();
 builder.Services.AddPostgresDataAccess<PatientContext>(connectionString);
 
 // ── Outbox repository (writes domain events atomically with patient data) ──────
@@ -182,40 +182,3 @@ app.MapHealthChecks("/health");
 
 await app.RunAsync();
 
-// ── Build Npgsql connection string from Replit PG* env vars ──────────────────
-static string BuildConnectionString(IConfiguration config)
-{
-    var explicit_ = config.GetConnectionString("DefaultConnection");
-    if (!string.IsNullOrEmpty(explicit_))
-    {
-        // If the explicit connection string points to localhost, it's the docker-compose
-        // default — prefer Replit env vars if they're present.
-        var host = Environment.GetEnvironmentVariable("PGHOST");
-        if (!string.IsNullOrEmpty(host) && explicit_.Contains("localhost"))
-        {
-            // Fall through to build from env vars below.
-        }
-        else
-        {
-            return explicit_;
-        }
-    }
-
-    var pgHost = Environment.GetEnvironmentVariable("PGHOST");
-    var pgPort = Environment.GetEnvironmentVariable("PGPORT") ?? "5432";
-    var pgDb   = Environment.GetEnvironmentVariable("PGDATABASE");
-    var pgUser = Environment.GetEnvironmentVariable("PGUSER");
-    var pgPass = Environment.GetEnvironmentVariable("PGPASSWORD");
-
-    if (!string.IsNullOrEmpty(pgHost))
-    {
-        var needsSsl = pgHost.Contains('.');
-        var sslClause = needsSsl
-            ? "SSL Mode=Require;Trust Server Certificate=true;"
-            : "SSL Mode=Disable;";
-        return $"Host={pgHost};Port={pgPort};Database={pgDb};Username={pgUser};Password={pgPass};{sslClause}";
-    }
-
-    throw new InvalidOperationException(
-        "Database connection not configured. Set ConnectionStrings__DefaultConnection or PGHOST.");
-}
